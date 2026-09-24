@@ -1,4 +1,5 @@
-snapshot_date,gpu,offline_tokens_per_sec,market_usd_per_token,ceiling_usd_per_hr,rental_usd_per_hr,ratio,violation
-2026-09-24,B200,12357.25,4e-07,17.7944,9.3854,0.5274,False
-2026-09-24,H100 SXM,3066.0,4e-07,4.415,3.5127,0.7956,False
-2026-09-24,H200 SXM,4373.5,4e-07,6.2978,5.0022,0.7943,False
+snapshot_date,basket,gpu,offline_tokens_per_sec,market_usd_per_token,ceiling_usd_per_hr,rental_usd_per_hr,ratio,violation
+2026-09-24,llama_3_1_405b_family,B200,207.438,3e-06,2.2403,9.3854,4.1893,True
+2026-09-24,llama_3_1_405b_family,H100 SXM,48.946,3e-06,0.5286,3.3965,6.4253,True
+2026-09-24,deepseek_v3_family,B200,207.438,4e-07,0.2987,9.3854,31.4197,True
+2026-09-24,deepseek_v3_family,H100 SXM,48.946,4e-07,0.0705,3.3965,48.1894,True

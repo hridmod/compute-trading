@@ -16,10 +16,17 @@ be setting the price.
 
 We use the *offline* MLPerf scenario (max achievable throughput, not
 latency-constrained) as the generous, best-case ceiling -- if rental price
-still exceeds this generous ceiling, that's a strong violation signal. We use
-the *median* completion price across the comparable-capability model basket
-(src/pull_llm_pricing.py) as the market $/token, and *median* rental price
-across live offers as the actual rental rate.
+still exceeds this generous ceiling, that's a strong violation signal. Market
+$/token is the single latest-release model's completion price for a given
+basket (src/pull_llm_pricing.py::MODEL_BASKETS) -- not a multi-version
+median, see that file's docstring for why averaging across a model
+lineage's dated releases would bias the rate. Rental rate is the median
+$/hr across live offers for that GPU.
+
+Benchmarked model: Llama-3.1-405B (MLPerf Inference v5.1). Replaced the
+originally-scoped Llama2-70B (2023-era, no longer commonly deployed) with
+this current-generation model -- see README.md for the full rationale and
+what changed as a result.
 """
 
 SECONDS_PER_HOUR = 3600
@@ -34,11 +41,11 @@ def median(values):
     return values[mid] if n % 2 else (values[mid - 1] + values[mid]) / 2
 
 
-def market_usd_per_token(llm_pricing_rows):
+def market_usd_per_token(llm_pricing_rows, basket):
     completion_prices = [
         float(r["completion_usd_per_token"])
         for r in llm_pricing_rows
-        if r.get("completion_usd_per_token") not in (None, "", "None")
+        if r.get("basket") == basket and r.get("completion_usd_per_token") not in (None, "", "None")
     ]
     return median(completion_prices)
 
@@ -50,11 +57,12 @@ def offline_tokens_per_sec_per_gpu(mlperf_rows, gpu):
     return None
 
 
-def compute_ceiling_test(mlperf_rows, rental_rows, llm_pricing_rows):
-    """Return one result dict per GPU that has both a benchmark and a rental quote."""
-    market_rate = market_usd_per_token(llm_pricing_rows)
+def compute_ceiling_test(mlperf_rows, rental_rows, llm_pricing_rows, basket):
+    """Return one result dict per GPU that has both a benchmark and a rental quote,
+    using the given pricing basket (see src/pull_llm_pricing.py::MODEL_BASKETS)."""
+    market_rate = market_usd_per_token(llm_pricing_rows, basket)
     if market_rate is None:
-        raise ValueError("no usable completion pricing in llm_pricing_rows")
+        raise ValueError(f"no usable completion pricing for basket {basket!r} in llm_pricing_rows")
 
     results = []
     for rental in rental_rows:
@@ -66,6 +74,7 @@ def compute_ceiling_test(mlperf_rows, rental_rows, llm_pricing_rows):
         rental_usd_per_hr = float(rental["dph_median"])
         results.append(
             {
+                "basket": basket,
                 "gpu": gpu,
                 "offline_tokens_per_sec": tps,
                 "market_usd_per_token": market_rate,

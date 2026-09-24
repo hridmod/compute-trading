@@ -25,18 +25,18 @@ def main():
         print("no history yet -- run analysis/run_analysis.py at least once first")
         return
 
-    by_gpu = defaultdict(list)
+    by_basket_gpu = defaultdict(list)
     for row in history:
-        by_gpu[row["gpu"]].append(row)
+        by_basket_gpu[(row.get("basket", "unknown"), row["gpu"])].append(row)
 
     n_dates = len({row["snapshot_date"] for row in history})
     print(f"backtest: {n_dates} snapshot date(s), {len(history)} total observations\n")
 
-    for gpu, rows in sorted(by_gpu.items()):
+    for (basket, gpu), rows in sorted(by_basket_gpu.items()):
         rows = sorted(rows, key=lambda r: r["snapshot_date"])
         ratios = [float(r["ratio"]) for r in rows]
         violations = sum(1 for r in rows if r["violation"] == "True")
-        print(f"{gpu}: {len(rows)} observation(s), {violations} violation(s)")
+        print(f"[{basket}] {gpu}: {len(rows)} observation(s), {violations} violation(s)")
         print(f"  ratio range: {min(ratios):.3f} - {max(ratios):.3f} (rental / ceiling)")
         for r in rows:
             flag = " <-- VIOLATION" if r["violation"] == "True" else ""
