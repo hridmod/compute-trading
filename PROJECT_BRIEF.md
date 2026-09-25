@@ -69,30 +69,56 @@ useful information, not a failure).
 
 | # | Hypothesis | Status | Folder |
 |---|---|---|---|
-| 1 | Token-parity ceiling holds (rental ≤ tokens/hr × $/token) | **Built, first result in** | `token_parity/` |
+| 1 | Token-parity ceiling holds (rental ≤ tokens/hr × $/token) | **Built, live-pulled, first result in** | `token_parity/` |
 | 2 | SD vs. OCPI index spread is stable/explainable, not regime-shifting | Not started — blocked on index history depth | `index_dispersion/` (planned) |
 | 3 | Legacy-SKU forward curves sit in backwardation by default; contango episodes are informative | Not started — needs forward/tenor data (proxy via reserved-vs-spot pricing pre-October futures listing) | `term_structure/` (planned) |
 | 4 | H200/H100 spread tracks decode-share of demand | Not started — smaller side-study, could piggyback on `token_parity/` data | `sku_spread/` (planned) |
 | 5 | Neoclouds are the most exposed book (long depreciating hardware, short falling rental rates) — build a structural credit-stress model | Not started — highest-value next build given professional background (VaR/margin analytics) | `neocloud_credit_stress/` (planned) |
+| 6 | Substitution ceiling holds (legacy-chip rental ≤ best-chip cost-per-token × legacy tok/hr) — second of the three no-arbitrage forward-curve anchors from #6 | **Built, live-pulled, first result in** | `substitution_ceiling/` |
 
 ## Sub-project 1: `token_parity/` (built)
 
-Tests the token-parity ceiling using real MLPerf throughput benchmarks,
-GPU rental price quotes, and LLM API pricing (all sourced/dated CSVs, not
-live-pulled yet). Full detail in `token_parity/README.md`.
+Tests the token-parity ceiling using real MLPerf throughput benchmarks
+(Llama-3.1-405B, MLPerf v5.1, sourced to raw submission logs), live GPU
+rental quotes (Vast.ai), and live LLM API pricing (OpenRouter) — fully
+live-pulled, not static CSVs. Full detail in `token_parity/README.md`.
 
-**First result**: no ceiling violations. Rental prices sit at 5-40% of the
-implied ceiling across H100/H200/B200 — the bound is currently *slack*,
-not binding. That's a real finding: something else (scarcity, substitution
-premium, or the fact that most rented capacity is training/fine-tuning
-rather than token-metered inference) is setting rental prices right now,
-not token economics.
+**Current result**: the ceiling is violated, 4-48x depending on GPU and
+which of two independent pricing baskets is used (both agree on direction).
+Originally scoped against Llama2-70B, which showed the ceiling as slack
+(rental at 5-40% of ceiling, no violations) — replaced with Llama-3.1-405B
+since Llama2-70B is a 2023-era model no longer representative of anything
+deployed today. The reversal is driven almost entirely by throughput, not
+the pricing assumption: a 405B dense model produces ~63x fewer tokens/sec
+per GPU than the 70B model did.
 
 **Also surfaced immediately**: pulling real benchmark data hit the
-"benchmark integrity" problem head-on — H100 Llama2-70B throughput
-citations range from ~3,000 to ~24,525 tok/s across sources for the same
-nominal workload. Kept both ends rather than picking one; documented in
+"benchmark integrity" problem head-on twice — once via secondary sources
+conflating an 8-GPU system total with a per-GPU figure for the same H100
+submission, once via an AI-generated web search summary silently mislabeling
+GB200/GB300 results as H100/H200/B200. Both caught by tracing back to raw
+MLPerf submission logs rather than trusting any paraphrase; documented in
 the data notes rather than smoothed over.
+
+## Sub-project 6: `substitution_ceiling/` (built)
+
+Tests the second forward-curve anchor from hypothesis #6: no rational buyer
+pays more for legacy hardware-hours than the best currently deployable
+chip's cost-per-token implies. Reuses `token_parity/`'s verified MLPerf data
+and Vast.ai puller — needs no LLM pricing basket at all, since market
+$/token cancels out in a pure hardware-to-hardware comparison. Full detail
+in `substitution_ceiling/README.md`.
+
+**First result**: violated. H100 and H200 both rent at ~2.1-2.2x what their
+relative throughput vs. B200 (today's best chip) would justify — legacy
+hardware is in contango against the best chip, not the backwardation the
+thesis expects by default. Points the same direction as `token_parity`'s
+result without sharing its methodology, which is more informative than
+either alone. Leading hypothesis, not yet confirmed: B200 is
+supply/allocation-constrained, so legacy chips absorb spillover demand at a
+premium — testable as more history accumulates. Currently a spot-price
+proxy for what the thesis actually describes as a forward-curve test; real
+forward data (see `term_structure/` below) would let this be tested properly.
 
 ## What's next (in rough priority order)
 

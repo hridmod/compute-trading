@@ -1,4 +1,4 @@
-name: token_parity daily snapshot
+name: daily snapshot
 
 on:
   schedule:
@@ -11,9 +11,6 @@ permissions:
 jobs:
   snapshot:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: token_parity
     steps:
       - uses: actions/checkout@v4
 
@@ -21,14 +18,22 @@ jobs:
         with:
           python-version: "3.11"
 
-      - run: pip install -r requirements.txt
+      - name: token_parity snapshot
+        working-directory: token_parity
+        run: |
+          pip install -r requirements.txt
+          python analysis/run_analysis.py
 
-      - run: python analysis/run_analysis.py
+      - name: substitution_ceiling snapshot
+        working-directory: substitution_ceiling
+        run: |
+          pip install -r requirements.txt
+          python analysis/run_analysis.py
 
       - name: commit updated data
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/
-          git diff --cached --quiet || git commit -m "token_parity: daily data snapshot"
+          git add token_parity/data/ substitution_ceiling/data/
+          git diff --cached --quiet || git commit -m "daily data snapshot: token_parity, substitution_ceiling"
           git push

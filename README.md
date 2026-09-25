@@ -10,8 +10,12 @@ full thesis and sub-project roadmap.
   exceeds what the tokens that GPU can serve are worth on the open market
   (the "token-parity ceiling"). Live-pulled data, daily automated snapshots
   via GitHub Actions, accumulating backtest. **Built.**
+- [`substitution_ceiling/`](substitution_ceiling/) — tests whether legacy
+  GPUs (H100, H200) rent for more than their relative throughput vs. the
+  best available chip (B200) justifies. Live-pulled, no LLM pricing basket
+  needed. **Built.**
 
-Each sub-project is self-contained and runnable on its own:
+Each sub-project is self-contained and runnable on its own, e.g.:
 
 ```
 cd token_parity
