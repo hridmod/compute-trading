@@ -1,0 +1,4 @@
+gpu,stock_status,lowest_price_usd_per_hr,source,snapshot_date
+H100 SXM,Low,2.69,runpod_api,2026-09-25
+H200 SXM,Low,3.59,runpod_api,2026-09-25
+B200,,,runpod_api,2026-09-25

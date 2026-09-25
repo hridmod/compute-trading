@@ -15,6 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from src import io  # noqa: E402
 from src import model  # noqa: E402
 from src.pull_gpu_rental import pull_gpu_rental  # noqa: E402
+from src.pull_runpod_stock import pull_runpod_stock  # noqa: E402
 
 HISTORY_PATH = Path(__file__).resolve().parent.parent / "data" / "history" / "substitution_snapshots.csv"
 HISTORY_FIELDS = [
@@ -30,6 +31,16 @@ HISTORY_FIELDS = [
     "violation",
 ]
 
+SUPPLY_HISTORY_PATH = Path(__file__).resolve().parent.parent / "data" / "history" / "supply_signals.csv"
+SUPPLY_HISTORY_FIELDS = [
+    "snapshot_date",
+    "gpu",
+    "vastai_n_offers",
+    "vastai_dph_median",
+    "runpod_stock_status",
+    "runpod_lowest_price_usd_per_hr",
+]
+
 
 def append_history(results, snapshot_date):
     HISTORY_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -42,6 +53,29 @@ def append_history(results, snapshot_date):
             writer.writerow({"snapshot_date": snapshot_date, **r})
 
 
+def append_supply_signal_history(rental_rows, runpod_rows, snapshot_date):
+    runpod_by_gpu = {r["gpu"]: r for r in runpod_rows}
+    SUPPLY_HISTORY_PATH.parent.mkdir(parents=True, exist_ok=True)
+    is_new = not SUPPLY_HISTORY_PATH.exists()
+    with open(SUPPLY_HISTORY_PATH, "a", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=SUPPLY_HISTORY_FIELDS)
+        if is_new:
+            writer.writeheader()
+        for rental in rental_rows:
+            gpu = rental["gpu"]
+            runpod = runpod_by_gpu.get(gpu, {})
+            writer.writerow(
+                {
+                    "snapshot_date": snapshot_date,
+                    "gpu": gpu,
+                    "vastai_n_offers": rental["n_offers"],
+                    "vastai_dph_median": rental["dph_median"],
+                    "runpod_stock_status": runpod.get("stock_status"),
+                    "runpod_lowest_price_usd_per_hr": runpod.get("lowest_price_usd_per_hr"),
+                }
+            )
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--no-pull", action="store_true", help="reuse cached data/*.csv instead of pulling live")
@@ -52,9 +86,11 @@ def main():
     if not args.no_pull:
         print(f"pulling live data ({today})...")
         pull_gpu_rental(today)
+        pull_runpod_stock(today)
 
     mlperf_rows = io.load_mlperf_benchmarks()
     rental_rows = io.load_gpu_rental()
+    runpod_rows = io.load_runpod_stock()
 
     results = model.compute_substitution_test(mlperf_rows, rental_rows)
 
@@ -71,7 +107,20 @@ def main():
         )
 
     append_history(results, today)
-    print(f"\nappended {len(results)} row(s) to {HISTORY_PATH}")
+    print(f"appended {len(results)} row(s) to {HISTORY_PATH}")
+
+    print(f"\nsupply signal -- {today}")
+    print(f"{'gpu':<12}{'vastai offers':>15}{'vastai $/hr':>14}{'runpod stock':>15}{'runpod $/hr':>14}")
+    for rental in rental_rows:
+        gpu = rental["gpu"]
+        runpod = next((r for r in runpod_rows if r["gpu"] == gpu), {})
+        print(
+            f"{gpu:<12}{rental['n_offers']:>15}{float(rental['dph_median']):>14.3f}"
+            f"{str(runpod.get('stock_status')):>15}{str(runpod.get('lowest_price_usd_per_hr')):>14}"
+        )
+
+    append_supply_signal_history(rental_rows, runpod_rows, today)
+    print(f"appended {len(rental_rows)} row(s) to {SUPPLY_HISTORY_PATH}")
 
 
 if __name__ == "__main__":

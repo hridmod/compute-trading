@@ -79,42 +79,107 @@ daily, committing both sub-projects' updated `data/` back to the repo.
 
 ## Result (2026-09-25 live pull)
 
-Best chip: B200, 207.44 tok/s/GPU, $6.88/hr live rental.
+Best chip: B200, 207.44 tok/s/GPU. Two pulls made minutes apart while
+building this (B200 only had 2 live offers, so its price moved between
+them — itself a data point, see Supply signal below):
 
-| GPU | rental $/hr | ceiling $/hr | ratio | violation |
-|---|---|---|---|---|
-| H100 SXM | 3.57 | 1.62 | **2.20x** | Yes |
-| H200 SXM | 4.81 | 2.29 | **2.10x** | Yes |
+| Pull | GPU | rental $/hr | ceiling $/hr | ratio | violation |
+|---|---|---|---|---|---|
+| 1 (B200 @ $6.88/hr) | H100 SXM | 3.57 | 1.62 | **2.20x** | Yes |
+| 1 | H200 SXM | 4.81 | 2.29 | **2.10x** | Yes |
+| 2 (B200 @ $9.13/hr) | H100 SXM | 3.44 | 2.15 | **1.60x** | Yes |
+| 2 | H200 SXM | 4.90 | 3.04 | **1.61x** | Yes |
 
-Hand-verified independently outside the codebase — matches exactly.
+Hand-verified independently outside the codebase both times — matches
+exactly. Ratio magnitude moved with B200's price (expected, mechanical —
+see the model above), but the conclusion didn't: **every pull today, both
+legacy chips are in contango against B200**, never the reverse.
 
-**Both legacy chips are in contango against B200**: H100 and H200 rent for
-roughly 2.1-2.2x what their relative throughput vs. B200 would justify. A
-buyer who could actually get B200 capacity at its quoted price would
+A buyer who could actually get B200 capacity at its quoted price would
 strictly prefer it — cheaper tokens per dollar, not just faster completion.
-
 This is consistent with the `token_parity` finding (legacy chips priced
-well above what token economics alone justifies) but is a distinct signal:
-that test compared hardware price to token market value; this one compares
-hardware price to *other hardware*. Both pointing the same direction is
-more informative than either alone — it's not just "tokens are cheap
-right now," it's "legacy hardware specifically looks mispriced relative to
-its own generation's best alternative."
+well above what token economics alone justifies) but is a distinct signal
+via a completely different method: that test compared hardware price to
+token market value; this one compares hardware price to *other hardware*.
 
-**Most likely explanation, stated as a hypothesis, not a conclusion**: B200
-is supply/allocation constrained, so its quoted spot rental price isn't
-actually obtainable at the volume or reliability buyers need — legacy chips
-absorb spillover demand at a premium precisely because the "efficient"
-option is inaccessible, not because the market is pricing hardware
-irrationally. This is testable: if true, the substitution ceiling violation
-should shrink over time as B200 supply grows, which is exactly what
-accumulating daily history is for.
+## Supply signal: is B200 actually supply-constrained?
+
+The leading hypothesis for the violation above is that B200 is
+supply/allocation-constrained — its quoted spot price isn't really
+obtainable at the volume buyers need, so demand spills into legacy chips at
+a premium. Two things were checked specifically to test this, not just
+asserted:
+
+**Utilization — tried, dead end.** Queried Vast.ai without its `rentable`
+filter to see if currently-occupied machines would surface. Every offer
+returned had `rented: False` regardless of `rentable` value — this endpoint
+only ever lists not-currently-rented capacity, so there's no way to compute
+a true rented/total utilization ratio from it. Worth knowing this doesn't
+work rather than silently building on it.
+
+**Cross-market stock check — a real, independent signal.** RunPod exposes a
+public `stockStatus` field with no auth required. Same-day check:
+
+| GPU | RunPod stock | RunPod price |
+|---|---|---|
+| B200 | **no live-priced offer at all** | — |
+| H100 SXM | Low | $2.69/hr |
+| H200 SXM | Low | $3.59/hr |
+
+Every current-gen Hopper chip (H100, H200) shows constrained-but-available
+stock on a *second, independent* marketplace; B200 shows nothing at all.
+Re-queried twice to confirm it wasn't a transient blip — same result both
+times. This corroborates the substitution-ceiling violation from a
+completely different angle than either ceiling test.
+
+**Caveat, stated explicitly**: `stockStatus: null` can't distinguish two
+different stories from this data alone — (a) all installed B200 capacity is
+currently rented (real excess demand), vs. (b) RunPod has catalogued B200
+but hasn't deployed it yet (a rollout-timing story). Both are consistent
+with "buyers can't reliably get B200 right now," which is what this test
+needs, but they imply different things about *why*, and this data can't
+tell them apart.
+
+Now tracked automatically: `data/history/supply_signals.csv` logs Vast.ai
+`n_offers` and RunPod `stockStatus`/price per GPU on every run, alongside
+the substitution ceiling snapshot.
+
+## Important limitation: this is a spot proxy, not a forward test
+
+The actual thesis claim is about *forward* curves — whether a legacy SKU's
+priced-in expectation of future substitution is realistic. This test uses
+today's live spot rental prices for both the legacy chip and the best chip,
+which tests something narrower: is legacy hardware priced efficiently
+*right now* relative to the best chip *right now*. That's a reasonable spot
+proxy (same one `term_structure/` is scoped to use once real forward data
+exists — see `PROJECT_BRIEF.md`), but it is not yet the forward-curve test
+the thesis actually describes. Flagged, not glossed over.
+
+Also assumed: the best chip's live rental price is itself an efficient,
+uninflated reference point. If B200 carries its own scarcity premium — which
+the supply signal above suggests it might — the ceiling computed here is
+inflated too, which would understate how large the legacy-chip violation
+really is. This test can't correct for that from inside itself; it can only
+flag the possibility.
+
+## Running it
+
+```
+pip install -r requirements.txt
+python analysis/run_analysis.py          # pulls live data, runs the test, appends history (both files)
+python analysis/run_analysis.py --no-pull  # reuse cached data/*.csv, skip the live pull
+python analysis/backtest.py              # report the ratio across all accumulated history
+```
+
+`.github/workflows/daily_snapshot.yml` runs this alongside `token_parity`
+daily, committing both sub-projects' updated `data/` back to the repo.
 
 ## Open next steps
 
-1. Track B200 `n_offers` (live inventory count) alongside price — if the
-   supply-constraint hypothesis above is right, low B200 offer counts should
-   correlate with wider substitution-ceiling violations on legacy chips.
+1. Once enough `supply_signals.csv` history accumulates: check whether the
+   substitution-ceiling ratio actually correlates with Vast.ai `n_offers` /
+   RunPod stock status over time, as the supply-constraint hypothesis
+   predicts — and whether RunPod's B200 stock status ever goes non-null.
 2. Once real forward/futures data exists (October futures listing, or a
    reserved-vs-spot proxy), rerun this as an actual forward-curve test
    instead of the spot proxy used here — this is the natural bridge into

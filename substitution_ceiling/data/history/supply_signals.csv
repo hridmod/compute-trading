@@ -1,0 +1,4 @@
+snapshot_date,gpu,vastai_n_offers,vastai_dph_median,runpod_stock_status,runpod_lowest_price_usd_per_hr
+2026-09-25,B200,2,9.1281,,
+2026-09-25,H100 SXM,4,3.4375,Low,2.69
+2026-09-25,H200 SXM,2,4.9039,Low,3.59

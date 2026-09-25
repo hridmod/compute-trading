@@ -19,8 +19,19 @@ def load_gpu_rental():
     return _read_csv(DATA_DIR / "gpu_rental.csv")
 
 
+def load_runpod_stock():
+    return _read_csv(DATA_DIR / "runpod_stock.csv")
+
+
 def load_history():
     path = DATA_DIR / "history" / "substitution_snapshots.csv"
+    if not path.exists():
+        return []
+    return _read_csv(path)
+
+
+def load_supply_signal_history():
+    path = DATA_DIR / "history" / "supply_signals.csv"
     if not path.exists():
         return []
     return _read_csv(path)
