@@ -1,3 +1,5 @@
 snapshot_date,gpu,best_chip,offline_tokens_per_sec,best_chip_tokens_per_sec,best_chip_rental_usd_per_hr,ceiling_usd_per_hr,rental_usd_per_hr,ratio,violation
 2026-09-25,H100 SXM,B200,48.946,207.438,9.1281,2.1538,3.4375,1.596,True
 2026-09-25,H200 SXM,B200,69.094,207.438,9.1281,3.0404,4.9039,1.6129,True
+2026-09-26,H100 SXM,B200,48.946,207.438,7.5104,1.7721,3.2053,1.8087,True
+2026-09-26,H200 SXM,B200,69.094,207.438,7.5104,2.5016,4.8056,1.921,True

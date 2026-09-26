@@ -1,3 +1,3 @@
 basket,model_id,prompt_usd_per_token,completion_usd_per_token,context_length,source,snapshot_date
-llama_3_1_405b_family,nousresearch/hermes-4-405b,0.000001,0.000003,131072,openrouter_api,2026-09-25
-deepseek_v3_family,deepseek/deepseek-v3.2,0.000000269,0.0000004,163840,openrouter_api,2026-09-25
+llama_3_1_405b_family,nousresearch/hermes-4-405b,0.000001,0.000003,131072,openrouter_api,2026-09-26
+deepseek_v3_family,deepseek/deepseek-v3.2,0.000000269,0.0000004,163840,openrouter_api,2026-09-26
