@@ -75,6 +75,7 @@ useful information, not a failure).
 | 4 | H200/H100 spread tracks decode-share of demand | Not started — smaller side-study, could piggyback on `token_parity/` data | `sku_spread/` (planned) |
 | 5 | Neoclouds are the most exposed book (long depreciating hardware, short falling rental rates) — build a structural credit-stress model | Not started — highest-value next build given professional background (VaR/margin analytics) | `neocloud_credit_stress/` (planned) |
 | 6 | Substitution ceiling holds (legacy-chip rental ≤ best-chip cost-per-token × legacy tok/hr) — second of the three no-arbitrage forward-curve anchors from #6 | **Built, live-pulled, first result in** | `substitution_ceiling/` |
+| 7 | Shutdown floor holds (rental ≥ power draw × PUE × electricity rate) — third and last of the three no-arbitrage forward-curve anchors from #6 | **Built, first result in** | `shutdown_floor/` |
 
 ## Sub-project 1: `token_parity/` (built)
 
@@ -120,7 +121,27 @@ premium — testable as more history accumulates. Currently a spot-price
 proxy for what the thesis actually describes as a forward-curve test; real
 forward data (see `term_structure/` below) would let this be tested properly.
 
-## What's next (in rough priority order)
+## Sub-project 7: `shutdown_floor/` (built)
+
+Tests the third and last forward-curve anchor from hypothesis #6: rental
+can't sustainably print below the marginal operator's variable cash cost
+(power, colo, staffing) — below it, capacity should withdraw. Built from
+NVIDIA's own GPU power-draw specs, EIA's official 2024 industrial
+electricity price filings (Virginia and Texas — the #1 and #2 US states by
+datacenter count), and Uptime Institute's 2024 PUE survey. Full detail in
+`shutdown_floor/README.md`.
+
+**First result**: not violated, and not close — rental sits 32-83x above
+the floor even under the toughest (highest-cost) assumption tested. Colo
+lease and staffing costs are explicitly excluded (no defensible public
+per-GPU-hour figure exists for either), making this a lower bound — the
+real floor is at least this high, so the slack found is if anything an
+understatement of how far rental price sits from the floor.
+
+**Synthesis across all three anchors**: current GPU rental pricing sits
+above both ceilings tested (token-parity, substitution) and far above the
+floor. None of the three disciplines is currently the marginal price
+setter — a specific, positive finding, not just three separate nulls.
 
 1. **Automate the data layer.** `token_parity/src/io.py` currently reads
    hand-maintained CSVs. Replace with a scheduled puller (provider rate

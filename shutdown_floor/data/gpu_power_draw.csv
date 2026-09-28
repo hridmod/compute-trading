@@ -1,0 +1,4 @@
+gpu,tdp_watts,source,source_url,snapshot_date,notes
+H100 SXM,700,nvidia_official_spec_page,https://www.nvidia.com/en-us/data-center/h100/,2026-09-28,"Listed as 'Up to 700W (configurable)'. Using the max configurable figure -- the highest, hardest-to-violate variable-cost input, consistent with this project's convention of picking the toughest test."
+H200 SXM,700,nvidia_official_spec_page,https://www.nvidia.com/en-us/data-center/h200/,2026-09-28,"Same power envelope as H100 SXM per NVIDIA's own spec page despite higher memory/bandwidth."
+B200,1000,nvidia_developer_blog,https://developer.nvidia.com/blog/optimize-data-center-efficiency-for-ai-and-hpc-workloads-with-power-profiles/,2026-09-28,"NVIDIA's own blog states '1,000 W NVIDIA B200 GPUs' repeatedly as the reference figure. The post doesn't explicitly label this TDP vs. another power metric -- flagged; this is the most authoritative figure found after checking NVIDIA's own datasheet and blog."

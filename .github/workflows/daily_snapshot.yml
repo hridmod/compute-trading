@@ -30,10 +30,16 @@ jobs:
           pip install -r requirements.txt
           python analysis/run_analysis.py
 
+      - name: shutdown_floor snapshot
+        working-directory: shutdown_floor
+        run: |
+          pip install -r requirements.txt
+          python analysis/run_analysis.py
+
       - name: commit updated data
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add token_parity/data/ substitution_ceiling/data/
-          git diff --cached --quiet || git commit -m "daily data snapshot: token_parity, substitution_ceiling"
+          git add token_parity/data/ substitution_ceiling/data/ shutdown_floor/data/
+          git diff --cached --quiet || git commit -m "daily data snapshot: token_parity, substitution_ceiling, shutdown_floor"
           git push

@@ -14,6 +14,10 @@ full thesis and sub-project roadmap.
   GPUs (H100, H200) rent for more than their relative throughput vs. the
   best available chip (B200) justifies. Live-pulled, no LLM pricing basket
   needed. **Built.**
+- [`shutdown_floor/`](shutdown_floor/) — tests whether GPU rental price
+  ever sustainably prints below the marginal operator's variable cash cost
+  (power draw x datacenter PUE x industrial electricity rate). Closes out
+  all three forward-curve anchors from the thesis. **Built.**
 
 Each sub-project is self-contained and runnable on its own, e.g.:
 
