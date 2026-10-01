@@ -18,6 +18,10 @@ full thesis and sub-project roadmap.
   ever sustainably prints below the marginal operator's variable cash cost
   (power draw x datacenter PUE x industrial electricity rate). Closes out
   all three forward-curve anchors from the thesis. **Built.**
+- [`neocloud_credit_stress/`](neocloud_credit_stress/) — structural credit
+  model for a real GPU-collateralized loan (CoreWeave's $2.6B facility,
+  1.35x DSCR covenant): deterministic scenarios plus a Monte Carlo
+  comparison of three rate-decay processes. **Built.**
 
 Each sub-project is self-contained and runnable on its own, e.g.:
 

@@ -71,9 +71,9 @@ useful information, not a failure).
 |---|---|---|---|
 | 1 | Token-parity ceiling holds (rental ≤ tokens/hr × $/token) | **Built, live-pulled, first result in** | `token_parity/` |
 | 2 | SD vs. OCPI index spread is stable/explainable, not regime-shifting | Not started — blocked on index history depth | `index_dispersion/` (planned) |
-| 3 | Legacy-SKU forward curves sit in backwardation by default; contango episodes are informative | Not started — needs forward/tenor data (proxy via reserved-vs-spot pricing pre-October futures listing) | `term_structure/` (planned) |
+| 3 | Legacy-SKU forward curves sit in backwardation by default; contango episodes are informative | Not started — real data unblocks soon: CME lists Silicon Data H100/B200 rental index futures 2026-10-05 (confirmed real, not speculative) | `term_structure/` (planned) |
 | 4 | H200/H100 spread tracks decode-share of demand | Not started — smaller side-study, could piggyback on `token_parity/` data | `sku_spread/` (planned) |
-| 5 | Neoclouds are the most exposed book (long depreciating hardware, short falling rental rates) — build a structural credit-stress model | Not started — highest-value next build given professional background (VaR/margin analytics) | `neocloud_credit_stress/` (planned) |
+| 5 | Neoclouds are the most exposed book (long depreciating hardware, short falling rental rates) — build a structural credit-stress model | **Built, first result in** | `neocloud_credit_stress/` |
 | 6 | Substitution ceiling holds (legacy-chip rental ≤ best-chip cost-per-token × legacy tok/hr) — second of the three no-arbitrage forward-curve anchors from #6 | **Built, live-pulled, first result in** | `substitution_ceiling/` |
 | 7 | Shutdown floor holds (rental ≥ power draw × PUE × electricity rate) — third and last of the three no-arbitrage forward-curve anchors from #6 | **Built, first result in** | `shutdown_floor/` |
 
@@ -100,6 +100,30 @@ submission, once via an AI-generated web search summary silently mislabeling
 GB200/GB300 results as H100/H200/B200. Both caught by tracing back to raw
 MLPerf submission logs rather than trusting any paraphrase; documented in
 the data notes rather than smoothed over.
+
+## Sub-project 5: `neocloud_credit_stress/` (built)
+
+Structural credit model for CoreWeave's real $2.6B DDTL V-V facility
+(SOFR+550bps, 1.35x DSCR covenant, closed late July 2026 after a 100-125bps
+spread widening) — per-capex-dollar normalized since the tranche's GPU
+count/mix isn't disclosed. Full detail, including two bugs caught during
+the build (a floating-point breach-tolerance issue and an opex/revenue
+scaling mismatch), in `neocloud_credit_stress/README.md`.
+
+**First result, in two parts**: (1) calibrated against CoreWeave's actual
+whole-company revenue-to-debt ratio, this tranche's month-1 DSCR comes out
+to 0.49x — already below the 1.35x covenant before any rate decay at all.
+It would need 2.04x the company-average revenue efficiency to clear
+covenant today; this data can't confirm or rule that out, flagged as the
+open question. (2) Isolating rate-decay risk specifically (scaling to
+assume covenant clears exactly at t=0): three deterministic scenarios show
+shock *shape* matters as much as magnitude (a realistic 6% step-down gets
+absorbed by amortization-driven DSCR cushion; sustained decline doesn't). A
+three-way Monte Carlo comparison (GBM / block-bootstrap / regime-switching,
+all calibrated off only 4 sparse historical observations) shows breach
+probability ranging 25-87% depending on which process is trusted —
+regime-switching's instability (flagged as a risk before building, from
+only 2 observed transitions) shows up exactly as predicted.
 
 ## Sub-project 6: `substitution_ceiling/` (built)
 

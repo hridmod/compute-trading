@@ -1,0 +1,9 @@
+field,value,source,source_url,snapshot_date,notes
+fy2025_revenue_usd,5130000000,zettabyte_unit_economics,https://zettabyte.com/blog/neocloud-unit-economics-gpu-cloud,2026-10-01,"CoreWeave Inc. whole-company revenue, FY2025."
+fy2025_adj_ebitda_margin_pct,60,zettabyte_unit_economics,https://zettabyte.com/blog/neocloud-unit-economics-gpu-cloud,2026-10-01,"Whole-company adjusted EBITDA margin -- used as this model's baseline margin calibration target for the DDTL V-V tranche, since tranche-level margin isn't separately disclosed."
+fy2025_net_loss_usd,1170000000,zettabyte_unit_economics,https://zettabyte.com/blog/neocloud-unit-economics-gpu-cloud,2026-10-01,
+fy2025_da_usd,2450000000,zettabyte_unit_economics,https://zettabyte.com/blog/neocloud-unit-economics-gpu-cloud,2026-10-01,
+fy2025_interest_expense_usd,1200000000,zettabyte_unit_economics,https://zettabyte.com/blog/neocloud-unit-economics-gpu-cloud,2026-10-01,
+total_debt_usd,21400000000,zettabyte_unit_economics,https://zettabyte.com/blog/neocloud-unit-economics-gpu-cloud,2026-10-01,"Whole-company total debt -- the $2.6B DDTL V-V facility modeled here is one tranche of this larger stack, not the whole thing."
+microsoft_revenue_concentration_pct,67,zettabyte_unit_economics,https://zettabyte.com/blog/neocloud-unit-economics-gpu-cloud,2026-10-01,"Single-counterparty concentration -- real risk factor, NOT modeled in this sub-project's rental-decay stress test. Flagged as an open next step, not folded in."
+independent_breakeven_estimate_usd_per_hr,1.5,zettabyte_unit_economics,https://zettabyte.com/blog/neocloud-unit-economics-gpu-cloud,2026-10-01,"Article's own estimate: 'a debt-financed fleet breaks even somewhere in the high-$1 range per GPU-hour' before colo/power/ops. Used only as an external sanity-check against this model's own implied breakeven, not as a direct model input."
