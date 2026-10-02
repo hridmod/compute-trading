@@ -29,3 +29,9 @@ snapshot_date,scenario,gpu,tdp_watts,pue,electricity_usd_per_kwh,floor_usd_per_h
 2026-10-01,most_efficient,B200,1000.0,1.47,0.0612,0.09,7.0333,78.179,False
 2026-10-01,most_efficient,H100 SXM,700.0,1.47,0.0612,0.063,4.5293,71.9224,False
 2026-10-01,most_efficient,H200 SXM,700.0,1.47,0.0612,0.063,5.1213,81.323,False
+2026-10-02,toughest,B200,1000.0,1.58,0.0899,0.142,6.2521,44.0159,False
+2026-10-02,toughest,H100 SXM,700.0,1.58,0.0899,0.0994,3.5759,35.9642,False
+2026-10-02,toughest,H200 SXM,700.0,1.58,0.0899,0.0994,5.1213,51.5069,False
+2026-10-02,most_efficient,B200,1000.0,1.47,0.0612,0.09,6.2521,69.4956,False
+2026-10-02,most_efficient,H100 SXM,700.0,1.47,0.0612,0.063,3.5759,56.783,False
+2026-10-02,most_efficient,H200 SXM,700.0,1.47,0.0612,0.063,5.1213,81.323,False
