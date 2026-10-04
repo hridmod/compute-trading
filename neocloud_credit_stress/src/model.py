@@ -1,16 +1,23 @@
 """Structural credit model for CoreWeave's DDTL V-V facility ($2.6B, 1.35x
-DSCR covenant) -- per-capex-dollar normalized, since the tranche's exact GPU
-count/mix isn't disclosed (see README "Why per-capex-dollar").
+DSCR covenant).
 
-Calibration (baseline, t=0):
-    revenue_to_debt_ratio   = FY2025 whole-company revenue / whole-company total debt
-    baseline_annual_revenue = loan_amount * revenue_to_debt_ratio
-    baseline_ebitda_margin  = FY2025 whole-company adjusted EBITDA margin (60%)
-    rate_baseline           = most recent neocloud-tier $/hr (Silicon Data)
-    implied_fleet_hours     = baseline_annual_revenue / rate_baseline
+Calibration (baseline, t=0) -- bottom-up from hardware cost, not a
+backed-out multiplier against whole-company financials:
+    fleet_size        = loan_amount / cost_per_gpu
+    fleet_hours/year   = fleet_size * 8760 * utilization
+    baseline_revenue  = fleet_hours/year * rate_baseline (neocloud tier)
+    baseline_opex     = baseline_revenue * (1 - ebitda_margin)   -- margin is
+                         CoreWeave's real disclosed FY2025 figure, applied to
+                         revenue this time, not used to size revenue itself
+    power_opex        = fleet_hours/year * power_cost_per_hr     -- from
+                         shutdown_floor's own verified output
 
-Monthly waterfall, given a rate_index path (1.0 = baseline, moves with the
-decay process driving the simulation):
+One real assumption chain, each link sourced (see data/fleet_calibration.csv):
+hardware cost per GPU -> fleet size -> fleet-hours (at a utilization rate
+sourced to how debt-backed, contract-offtake capacity actually runs, not a
+generic market-wide figure) -> revenue at the real neocloud-tier rate.
+
+Monthly waterfall, given a rate_index path (1.0 = baseline):
     revenue(t) = (baseline_annual_revenue / 12) * rate_index(t)
     opex(t)    = baseline_annual_opex_total / 12          -- HELD FIXED, see below
     noi(t)     = revenue(t) - opex(t)
@@ -28,25 +35,32 @@ the same "pick the toughest test" convention used in every other
 sub-project in this repo: it's the assumption most likely to produce a
 covenant breach, so a "not violated" result under it is the stronger claim.
 
-The power/cooling component of opex is NOT a separate line item in this
-waterfall -- it's a small (~5%, see README) slice of the fixed opex figure,
-sized using shutdown_floor's own verified H100 floor ($0.063/hr,
-most_efficient scenario) at the baseline rate. Shown separately in
-calibration output for transparency, not because it moves independently.
+Whatever DSCR comes out at t=0 is reported as-is -- there is no scaling
+step to force it to any particular value. An earlier version of this model
+backed into revenue via a whole-company ratio, found baseline DSCR deeply
+breached, and patched around that with an invented "required efficiency
+multiple" to make the decay-scenario comparison runnable. That patch is
+gone: this calibration is meant to be defensible on its own, not adjusted
+after the fact to produce a convenient starting point.
 """
 
-def calibrate(debt_terms, useful_life_rows, rental_history_rows, company_financials, power_cost_usd_per_hr):
-    loan_amount = float(debt_terms["facility_size_usd"])
-    revenue = float(company_financials["fy2025_revenue_usd"])
-    total_debt = float(company_financials["total_debt_usd"])
-    ebitda_margin = float(company_financials["fy2025_adj_ebitda_margin_pct"]) / 100
 
-    revenue_to_debt_ratio = revenue / total_debt
-    baseline_annual_revenue = loan_amount * revenue_to_debt_ratio
-    baseline_annual_opex_total = baseline_annual_revenue * (1 - ebitda_margin)
+def calibrate(debt_terms, useful_life_rows, rental_history_rows, fleet_calibration, company_financials, power_cost_usd_per_hr):
+    loan_amount = float(debt_terms["facility_size_usd"])
+
+    cost_low = float(fleet_calibration["h100_8gpu_server_cost_low_usd"])
+    cost_high = float(fleet_calibration["h100_8gpu_server_cost_high_usd"])
+    cost_per_gpu = ((cost_low + cost_high) / 2) / 8
+    fleet_size = loan_amount / cost_per_gpu
+
+    utilization = float(fleet_calibration["assumed_utilization_pct"]) / 100
+    implied_fleet_hours_per_year = fleet_size * 8760 * utilization
 
     rate_baseline = float(rental_history_rows[-1]["price_median_usd_per_hr"])
-    implied_fleet_hours_per_year = baseline_annual_revenue / rate_baseline
+    baseline_annual_revenue = implied_fleet_hours_per_year * rate_baseline
+
+    ebitda_margin = float(company_financials["fy2025_adj_ebitda_margin_pct"]) / 100
+    baseline_annual_opex_total = baseline_annual_revenue * (1 - ebitda_margin)
 
     baseline_annual_power_opex = implied_fleet_hours_per_year * power_cost_usd_per_hr
 
@@ -55,7 +69,9 @@ def calibrate(debt_terms, useful_life_rows, rental_history_rows, company_financi
 
     return {
         "loan_amount": loan_amount,
-        "revenue_to_debt_ratio": revenue_to_debt_ratio,
+        "cost_per_gpu": cost_per_gpu,
+        "fleet_size": fleet_size,
+        "utilization": utilization,
         "baseline_annual_revenue": baseline_annual_revenue,
         "baseline_annual_opex_total": baseline_annual_opex_total,
         "baseline_annual_power_opex": baseline_annual_power_opex,
@@ -70,62 +86,6 @@ def calibrate(debt_terms, useful_life_rows, rental_history_rows, company_financi
     }
 
 
-def required_efficiency_multiple(calibration):
-    """How many times the whole-company-blended revenue-to-debt ratio would
-    this tranche need to generate, at today's rate (rate_index=1.0), for
-    month-1 DSCR to clear the covenant exactly?
-
-    The proportional/blended calibration in calibrate() applies CoreWeave's
-    company-wide average revenue-per-debt-dollar to this one tranche. But
-    this tranche's terms (full 5yr amortization, 550bps spread) are far
-    harsher than the company's blended average debt profile, and it's
-    specifically backed by newer, individually-underwritten customer
-    contracts (per the facility's own disclosure) -- not a cross-section of
-    the whole book. So the blended calibration likely understates what this
-    tranche's actual backing revenue is. This multiple quantifies exactly
-    how far off: a company backing a loan this tight would need contracts
-    performing at N times the company average to clear covenant today, with
-    zero rate decay yet applied.
-    """
-    n = calibration["amortization_months"]
-    monthly_principal = calibration["loan_amount"] / n
-    monthly_rate = (calibration["sofr_pct"] / 100 + calibration["spread_bps"] / 10000) / 12
-    month1_interest = calibration["loan_amount"] * monthly_rate
-    month1_debt_service = monthly_principal + month1_interest
-    monthly_opex = calibration["baseline_annual_opex_total"] / 12
-
-    required_monthly_revenue = calibration["dscr_covenant"] * month1_debt_service + monthly_opex
-    required_annual_revenue = required_monthly_revenue * 12
-    return required_annual_revenue / calibration["baseline_annual_revenue"]
-
-
-def scale_to_covenant_clearing(calibration):
-    """Return a copy of calibration scaled so month-1 DSCR sits exactly at
-    the covenant (1.35x) with zero rate decay -- i.e. assume this tranche's
-    specific contracts realize a higher effective $/hr than the general
-    neocloud-tier market median (consistent with guaranteed/reserved
-    capacity commanding a premium over spot -- the L3 firmness/workload
-    distinction from PROJECT_BRIEF.md's commodity hierarchy), rather than
-    the company-blended average.
-
-    Deliberately scales ONLY revenue, not opex or implied fleet hours: the
-    physical fleet (and what it costs to power/cool/operate) is pinned by
-    the $2.6B of capex regardless of what price its output is contracted
-    at. Scaling opex too would have been inconsistent with how
-    required_efficiency_multiple() computed the required revenue (against
-    UNSCALED opex) -- that mismatch was caught by hand-verifying month-1
-    DSCR came out well below 1.35x instead of exactly at it.
-
-    Use this calibration for decay scenario / Monte Carlo comparisons: it
-    isolates the effect of rate decay from the baseline-tightness finding
-    above, which is a separate issue."""
-    multiple = required_efficiency_multiple(calibration)
-    scaled = dict(calibration)
-    scaled["baseline_annual_revenue"] = calibration["baseline_annual_revenue"] * multiple
-    scaled["_scaled_by_multiple"] = multiple
-    return scaled
-
-
 BREACH_TOLERANCE = 1e-6  # see run_waterfall docstring
 
 
@@ -135,12 +95,11 @@ def run_waterfall(calibration, rate_index_path):
     calibration['amortization_months'] for a full-tenor run).
 
     Breach uses dscr < dscr_covenant - BREACH_TOLERANCE, not a bare `<`.
-    Caught this the hard way: scale_to_covenant_clearing() is supposed to
-    put month-1 DSCR at exactly the covenant with zero decay, but the real
-    float value came out as 1.34999999999999986677 against a covenant of
-    1.35000000000000008882 -- a ~2e-16 gap from floating-point error
-    accumulated through the calibration chain, not an economic finding.
-    Bare `<` flagged every "exactly at covenant" case as a breach."""
+    Caught this the hard way in an earlier version of this model: a
+    calibration meant to sit exactly at the covenant produced a real float
+    value of 1.34999999999999986677 against a covenant of
+    1.35000000000000008882 -- a ~2e-16 gap from floating-point error, not
+    an economic finding. Bare `<` flagged it as a breach anyway."""
     n = calibration["amortization_months"]
     loan_amount = calibration["loan_amount"]
     monthly_principal = loan_amount / n

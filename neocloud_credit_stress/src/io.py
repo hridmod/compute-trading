@@ -34,3 +34,7 @@ def load_rental_rate_history():
 
 def load_opex_calibration():
     return _read_field_value_csv(DATA_DIR / "opex_calibration.csv")
+
+
+def load_fleet_calibration():
+    return _read_field_value_csv(DATA_DIR / "fleet_calibration.csv")

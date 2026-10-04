@@ -105,25 +105,25 @@ the data notes rather than smoothed over.
 
 Structural credit model for CoreWeave's real $2.6B DDTL V-V facility
 (SOFR+550bps, 1.35x DSCR covenant, closed late July 2026 after a 100-125bps
-spread widening) — per-capex-dollar normalized since the tranche's GPU
-count/mix isn't disclosed. Full detail, including two bugs caught during
-the build (a floating-point breach-tolerance issue and an opex/revenue
-scaling mismatch), in `neocloud_credit_stress/README.md`.
+spread widening). Deliberately narrow: one bottom-up calibration (fleet
+size from real hardware cost data, not a backed-out ratio needing a patch
+to clear covenant) and one stochastic process (block bootstrap, resampling
+real historical rate moves — no invented distribution). An earlier, wider
+version compared three deterministic scenarios and three stochastic
+processes on a patched calibration; narrowed down after feedback that six
+loosely-grounded parallel analyses were less useful than one or two
+defensible ones. Full detail in `neocloud_credit_stress/README.md`.
 
-**First result, in two parts**: (1) calibrated against CoreWeave's actual
-whole-company revenue-to-debt ratio, this tranche's month-1 DSCR comes out
-to 0.49x — already below the 1.35x covenant before any rate decay at all.
-It would need 2.04x the company-average revenue efficiency to clear
-covenant today; this data can't confirm or rule that out, flagged as the
-open question. (2) Isolating rate-decay risk specifically (scaling to
-assume covenant clears exactly at t=0): three deterministic scenarios show
-shock *shape* matters as much as magnitude (a realistic 6% step-down gets
-absorbed by amortization-driven DSCR cushion; sustained decline doesn't). A
-three-way Monte Carlo comparison (GBM / block-bootstrap / regime-switching,
-all calibrated off only 4 sparse historical observations) shows breach
-probability ranging 25-87% depending on which process is trusted —
-regime-switching's instability (flagged as a risk before building, from
-only 2 observed transitions) shows up exactly as predicted.
+**Result**: month-1 DSCR = 1.48x, comfortably above covenant, no patching
+required. A realistic historical-sized shock (6% step-down, partial
+reversal) doesn't breach either — debt service shrinks as the loan
+amortizes, building a cushion that absorbs it. 0 breaches in 2,000 (and
+20,000) Monte Carlo paths. **Flagged honestly, not oversold**: block
+bootstrap can only recombine the 4 historical moves it was given — checked
+the method's structural ceiling (repeating the single worst observed month
+for the full 61-month horizon) and that produces a severe breach
+(-0.42x), confirming the "0 breaches" result means "no risk within what 4
+data points can describe," not "no risk."
 
 ## Sub-project 6: `substitution_ceiling/` (built)
 
