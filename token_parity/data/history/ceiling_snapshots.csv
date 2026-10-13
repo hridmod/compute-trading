@@ -101,3 +101,7 @@ snapshot_date,basket,gpu,offline_tokens_per_sec,market_usd_per_token,ceiling_usd
 2026-10-12,llama_3_1_405b_family,H100 SXM,48.946,3e-06,0.5286,3.8742,7.3289,True
 2026-10-12,deepseek_v3_family,B200,207.438,8e-07,0.5974,6.2521,10.4651,True
 2026-10-12,deepseek_v3_family,H100 SXM,48.946,8e-07,0.141,3.8742,27.4835,True
+2026-10-13,llama_3_1_405b_family,B200,207.438,3e-06,2.2403,9.3854,4.1893,True
+2026-10-13,llama_3_1_405b_family,H100 SXM,48.946,3e-06,0.5286,2.7266,5.158,True
+2026-10-13,deepseek_v3_family,B200,207.438,8e-07,0.5974,9.3854,15.7098,True
+2026-10-13,deepseek_v3_family,H100 SXM,48.946,8e-07,0.141,2.7266,19.3425,True
