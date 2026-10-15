@@ -1,3 +1,2 @@
 gpu,n_offers,dph_min,dph_median,dph_max,source,snapshot_date
-B200,1,8.6104,8.6104,8.6104,vastai_api,2026-10-14
-H100 SXM,1,8.9022,8.9022,8.9022,vastai_api,2026-10-14
+H100 SXM,2,3.9114,6.5501,9.1889,vastai_api,2026-10-15
