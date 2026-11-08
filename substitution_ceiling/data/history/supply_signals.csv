@@ -93,3 +93,6 @@ snapshot_date,gpu,vastai_n_offers,vastai_dph_median,runpod_stock_status,runpod_l
 2026-11-07,B200,2,9.3812,Low,5.98
 2026-11-07,H100 SXM,6,3.5364,Low,2.69
 2026-11-07,H200 SXM,2,5.1102,Low,3.59
+2026-11-08,B200,1,12.5104,Low,5.98
+2026-11-08,H100 SXM,3,2.2022,Low,2.69
+2026-11-08,H200 SXM,3,5.2643,Medium,3.59
