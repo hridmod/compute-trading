@@ -1,4 +1,4 @@
 gpu,n_offers,dph_min,dph_median,dph_max,source,snapshot_date
-B200,4,7.5021,7.8896,8.7278,vastai_api,2026-11-24
-H100 SXM,1,1.7889,1.7889,1.7889,vastai_api,2026-11-24
-H200 SXM,3,5.068,5.2643,5.8077,vastai_api,2026-11-24
+B200,2,9.6903,10.7878,11.8854,vastai_api,2026-11-25
+H100 SXM,3,1.7889,2.3378,4.6849,vastai_api,2026-11-25
+H200 SXM,2,5.068,5.1661,5.2643,vastai_api,2026-11-25
